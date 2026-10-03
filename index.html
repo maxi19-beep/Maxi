@@ -1,209 +1,212 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Snapchat Style Interactive Map</title>
-    
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snap Map Style - High-Res Satellite</title>
 
-        body, html {
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-        }
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
-        #map {
-            width: 100vw;
-            height: 100vh;
-            background-color: #aadaff; /* Snapchat sky/water blue tint */
-        }
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      overflow: hidden;
+    }
 
-        /* Custom Snapchat Style Tooltips / Labels */
-        .snap-label {
-            background: #ffffff;
-            border: 2px solid #000000;
-            border-radius: 20px;
-            padding: 5px 12px;
-            font-weight: 700;
-            font-size: 13px;
-            color: #111;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-            white-space: nowrap;
-        }
+    #map {
+      width: 100vw;
+      height: 100vh;
+      background-color: #121212;
+    }
 
-        .snap-label::before {
-            display: none; /* Hide default leaflet arrow */
-        }
+    /* Floating Snap-Style Top Bar */
+    .top-bar {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: #ffffff;
+      padding: 10px 20px;
+      border-radius: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
 
-        /* Custom Marker Pins */
-        .map-pin {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: #FFFC00; /* Snapchat Yellow */
-            border: 3px solid #000;
-            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
-            font-size: 22px;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-        }
+    .top-bar .location-title {
+      font-size: 16px;
+      font-weight: 700;
+    }
 
-        .map-pin:hover {
-            transform: scale(1.2);
-        }
+    .top-bar .weather-info {
+      font-size: 12px;
+      opacity: 0.85;
+      margin-top: 2px;
+    }
 
-        .house-pin { background: #ff7675; }
-        .tree-pin { background: #55efc4; }
-        .building-pin { background: #74b9ff; }
+    /* Custom Snap Pin Marker */
+    .snap-marker-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transform: translate(-50%, -100%);
+    }
 
-        /* Floating UI Header */
-        .ui-header {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 10px 24px;
-            border-radius: 30px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-            border: 2px solid #000;
-            font-weight: bold;
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-    </style>
+    .snap-badge {
+      background: rgba(255, 255, 255, 0.95);
+      color: #111;
+      font-weight: 700;
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 16px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 6px;
+      white-space: nowrap;
+    }
+
+    .snap-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 3px solid #ffffff;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      background-size: cover;
+      background-position: center;
+    }
+
+    /* Floating Navigation Controls */
+    .controls {
+      position: absolute;
+      bottom: 24px;
+      right: 20px;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .control-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #fff;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      transition: transform 0.2s ease, background 0.2s ease;
+    }
+
+    .control-btn:hover {
+      transform: scale(1.08);
+      background: rgba(0, 0, 0, 0.85);
+    }
+  </style>
 </head>
 <body>
 
-    <div class="ui-header">
-        <span>📍 Snap-Style Map</span>
-    </div>
+  <!-- Map Container -->
+  <div id="map"></div>
 
-    <div id="map"></div>
+  <!-- Snap Header Bar -->
+  <div class="top-bar">
+    <div class="location-title">Aguata</div>
+    <div class="weather-info">🌤️ 22 °C</div>
+  </div>
 
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Map Quick Action Controls -->
+  <div class="controls">
+    <button class="control-btn" onclick="recenterMap()" title="Center Map">📍</button>
+  </div>
 
-    <script>
-        // 1. Initialize the map centered at your location (default set to Lagos / generic coordinates)
-        const map = L.map('map', {
-            zoomControl: false
-        }).setView([6.5244, 3.3792], 16); // Latitude, Longitude, Zoom Level
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-        // Add custom zoom control position
-        L.control.zoom({ position: 'bottomright' }).addTo(map);
+  <script>
+    // 1. Coordinates for Aguata / Ekwulobia area
+    const initialCoords = [6.0245, 7.0818];
 
-        // 2. Add Vector Tile style (CartoDB Voyager - clean, colorful Snapchat vibe showing roads & buildings clearly)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/">CARTO</a>',
-            subdomains: 'abcd',
-            maxZoom: 20
-        }).addTo(map);
+    // 2. Initialize Leaflet Map with maximum zoom capability
+    const map = L.map('map', {
+      center: initialCoords,
+      zoom: 18,
+      maxZoom: 21,
+      zoomControl: false
+    });
 
-        // 3. Helper function to create custom emoji markers
-        function createCustomIcon(emoji, typeClass) {
-            return L.divIcon({
-                className: 'custom-div-icon',
-                html: `<div class="map-pin ${typeClass}">${emoji}</div>`,
-                iconSize: [44, 44],
-                iconAnchor: [22, 22]
-            });
-        }
+    // 3. High-Resolution Tile Provider (Google Satellite Imagery)
+    // maxNativeZoom ensures max resolution tiles are loaded without pixelating early
+    const googleSat = L.tileLayer('https://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
+      maxZoom: 21,
+      maxNativeZoom: 20,
+      subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+      attribution: '&copy; Google Maps'
+    }).addTo(map);
 
-        // 4. Sample Map Data (Houses, Trees, Buildings, and Roads)
-        const locations = [
-            {
-                name: "My House 🏡",
-                type: "house",
-                emoji: "🏠",
-                class: "house-pin",
-                coords: [6.5250, 3.3785],
-                description: "Residential area with family house and garden."
-            },
-            {
-                name: "Central Park & Big Tree 🌳",
-                type: "tree",
-                emoji: "🌳",
-                class: "tree-pin",
-                coords: [6.5235, 3.3800],
-                description: "Green park area filled with tropical trees."
-            },
-            {
-                name: "Tech Tower Plaza 🏢",
-                type: "building",
-                emoji: "🏢",
-                class: "building-pin",
-                coords: [6.5260, 3.3810],
-                description: "Commercial multi-storey office building."
-            },
-            {
-                name: "Main Express Road 🛣️",
-                type: "road",
-                emoji: "🚗",
-                class: "house-pin",
-                coords: [6.5240, 3.3770],
-                description: "Connecting highway road."
-            }
-        ];
+    // Alternative High-Res Option (Esri World Imagery) - uncomment to use if preferred:
+    /*
+    const esriSat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      maxZoom: 21,
+      maxNativeZoom: 19,
+      attribution: 'Tiles &copy; Esri'
+    });
+    */
 
-        // 5. Add elements and floating persistent labels to the map
-        locations.forEach(loc => {
-            // Add Marker
-            const marker = L.marker(loc.coords, {
-                icon: createCustomIcon(loc.emoji, loc.class)
-            }).addTo(map);
+    // 4. Custom Marker Function (Snapchat Map Style)
+    function createSnapMarker(lat, lng, title, avatarUrl) {
+      const customIcon = L.divIcon({
+        className: 'custom-snap-marker',
+        html: `
+          <div class="snap-marker-container">
+            <div class="snap-badge">
+              📷 <span>${title}</span>
+            </div>
+            <div class="snap-avatar" style="background-image: url('${avatarUrl}');"></div>
+          </div>
+        `,
+        iconSize: [120, 80],
+        iconAnchor: [60, 80]
+      });
 
-            // Add Permanent Floating Label (Snapchat Style)
-            marker.bindTooltip(loc.name, {
-                permanent: true,
-                direction: 'top',
-                offset: [0, -20],
-                className: 'snap-label'
-            });
+      return L.marker([lat, lng], { icon: customIcon }).addTo(map);
+    }
 
-            // Add Click Popup Details
-            marker.bindPopup(`
-                <div style="text-align: center; padding: 5px;">
-                    <h3 style="margin-bottom: 5px;">${loc.name}</h3>
-                    <p>${loc.description}</p>
-                </div>
-            `);
-        });
+    // 5. Add Place Pin
+    createSnapMarker(
+      6.0245, 
+      7.0818, 
+      'Palace of Igwe Ekwulobia', 
+      'https://api.dicebear.com/7.x/bottts/svg?seed=Ekwulobia'
+    );
 
-        // 6. Optional: Click anywhere on map to add your own custom place
-        map.on('click', function(e) {
-            const name = prompt("Enter name for this new location (House, Tree, Road, etc.):");
-            if (name) {
-                const newMarker = L.marker(e.latlng, {
-                    icon: createCustomIcon("📍", "house-pin")
-                }).addTo(map);
-
-                newMarker.bindTooltip(name, {
-                    permanent: true,
-                    direction: 'top',
-                    offset: [0, -20],
-                    className: 'snap-label'
-                });
-
-                newMarker.bindPopup(`<b>${name}</b><br>Latitude: ${e.latlng.lat.toFixed(4)}<br>Longitude: ${e.latlng.lng.toFixed(4)}`);
-            }
-        });
-    </script>
+    // Recenter map function
+    function recenterMap() {
+      map.flyTo(initialCoords, 18, {
+        duration: 1.5
+      });
+    }
+  </script>
 </body>
 </html>
